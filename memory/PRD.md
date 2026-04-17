@@ -41,6 +41,13 @@ Create an app for a restaurant which runs locally inside their restaurant networ
 - `stop.sh` / `stop.bat` - Stop all services
 - `README.md` - Non-technical guide with all 3 setup methods
 
+### Owner Panel Feature (April 17, 2026)
+- Password-protected Owner Panel (default: owner123)
+- Staff Management: Add/Edit/Delete staff with Name, Role, Phone, Salary Type (monthly/daily), Salary Amount
+- Attendance Tracking: Calendar grid view, mark Present/Absent/Half-day per staff per day, monthly summary with counts
+- Salary Management: Generate salary per staff or all at once, supports monthly (prorated by attendance) and daily wage calculations
+- Route: /owner with password gate
+
 ## Prioritized Backlog
 ### P0 (Critical)
 - All core features implemented ✅
