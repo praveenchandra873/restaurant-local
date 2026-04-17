@@ -140,9 +140,7 @@ function Install-Yarn {
 }
 
 function Setup-Backend {
-    $scriptDir = Split-Path -Parent $MyInvocation.ScriptName
-    if (-not $scriptDir) { $scriptDir = Get-Location }
-    $backendDir = Join-Path $scriptDir "backend"
+    $backendDir = Join-Path $PSScriptRoot "backend"
     Set-Location $backendDir
 
     # Create virtual environment
@@ -170,9 +168,7 @@ CORS_ORIGINS=*
 }
 
 function Setup-Frontend {
-    $scriptDir = Split-Path -Parent $MyInvocation.ScriptName
-    if (-not $scriptDir) { $scriptDir = Get-Location }
-    $frontendDir = Join-Path $scriptDir "frontend"
+    $frontendDir = Join-Path $PSScriptRoot "frontend"
     $localIP = Get-LocalIP
     Set-Location $frontendDir
 
@@ -190,8 +186,7 @@ PORT=3000
 }
 
 function Create-StartScript {
-    $scriptDir = Split-Path -Parent $MyInvocation.ScriptName
-    if (-not $scriptDir) { $scriptDir = Get-Location }
+    $scriptDir = $PSScriptRoot
 
     # Create start.bat
     @"
@@ -347,11 +342,16 @@ function Write-Success {
 
 # ==================== MAIN ====================
 
+# Set the script's root directory (where this .ps1 file lives)
+$SCRIPT_ROOT = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $SCRIPT_ROOT) { $SCRIPT_ROOT = Get-Location }
+Set-Location $SCRIPT_ROOT
+Write-Host "  Working directory: $SCRIPT_ROOT" -ForegroundColor Gray
+
 # Check if running as Administrator
 $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 if (-not $isAdmin) {
-    Write-Err "Please run this script as Administrator!"
-    Write-Err "Right-click PowerShell -> 'Run as Administrator' -> then run this script again"
+    Write-Err "Please run via setup-windows.bat (it handles admin rights automatically)"
     pause
     exit 1
 }

@@ -33,10 +33,14 @@ Then to start every day:
 
 ### Method 3: Direct Install - Windows
 
-1. **Double-click `setup-windows.bat`**  — that's it!
-   - It will ask for Administrator permission — click **Yes**
-   - Wait for setup to complete (5-10 minutes on first run)
-2. Then to start every day: **double-click `start.bat`**
+1. **Double-click `setup-windows.bat`**
+2. A permission popup will appear — click **Yes**
+3. A new window opens and installs everything (5-10 minutes first time)
+4. When done, it shows "SETUP COMPLETE" with your network URLs
+5. To start every day: **double-click `start.bat`**
+6. To stop: **double-click `stop.bat`**
+
+> **Important:** Do NOT close the minimized DLH windows that appear when you run `start.bat` — those are the running services.
 
 ---
 
