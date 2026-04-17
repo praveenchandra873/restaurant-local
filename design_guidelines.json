@@ -1,0 +1,150 @@
+{
+  "theme": "light",
+  "archetype": "1 (Organic & Earthy)",
+  "domain": "Restaurant POS / Order Management System",
+  "design_philosophy": {
+    "core_principles": [
+      "Speed & Legibility: Captains and Kitchen staff operate in high-pressure environments; large touch targets and high-contrast text are critical.",
+      "Organic Warmth: Moving away from sterile, 'tech-bro' POS systems. Utilizing terracotta and sage tones to reflect culinary craft, hospitality, and warmth.",
+      "Density where needed: KDS and Admin panels must use 'Control Room' grid rules (tight gaps, full height utilization).",
+      "Optical Alignment: Ensure all icons inside buttons are perfectly centered with text."
+    ]
+  },
+  "colors": {
+    "background": "#F9F8F6",
+    "surface": "#FFFFFF",
+    "surface_secondary": "#F2EFE9",
+    "primary": "#C25934",
+    "primary_hover": "#A84C2B",
+    "text_primary": "#2A2F2B",
+    "text_secondary": "#5A615C",
+    "border": "#E0DBD3",
+    "success": "#4A6B56",
+    "success_bg": "#E9F0EC",
+    "warning": "#D99C3D",
+    "warning_bg": "#FDF4E6",
+    "danger": "#B24040",
+    "danger_bg": "#FAEDED",
+    "interactive_hover": "hover:bg-[#F2EFE9] hover:text-[#2A2F2B]",
+    "interactive_focus": "focus:ring-2 focus:ring-[#C25934]/50 focus:outline-none"
+  },
+  "typography": {
+    "families": {
+      "heading": "Work Sans, sans-serif",
+      "body": "IBM Plex Sans, sans-serif",
+      "mono": "JetBrains Mono, monospace"
+    },
+    "scale": {
+      "h1": "text-4xl md:text-5xl tracking-tight font-medium",
+      "h2": "text-2xl md:text-3xl tracking-tight font-medium",
+      "h3": "text-xl md:text-2xl font-medium",
+      "h4": "text-lg font-semibold",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm",
+      "overline": "text-xs uppercase tracking-[0.15em] font-semibold"
+    },
+    "rules": [
+      "NEVER use Inter, Roboto, or Open Sans for headings.",
+      "Headings must have tight tracking (tracking-tight).",
+      "Use IBM Plex Sans for tables, numbers, and dense information to maintain tabular figure clarity.",
+      "Always set text color explicitly on hover states."
+    ]
+  },
+  "layout_spacing": {
+    "spacing_scale": "Tailwind standard (p-2, p-4, p-6, p-8, p-12). Generous padding for surfaces (min p-6).",
+    "radius": {
+      "button": "rounded-md",
+      "card": "rounded-xl",
+      "modal": "rounded-2xl"
+    },
+    "shadows": {
+      "card": "shadow-[0_4px_12px_rgba(42,47,43,0.04)]",
+      "floating": "shadow-[0_12px_32px_rgba(42,47,43,0.08)]"
+    },
+    "grids": {
+      "kds": "grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 (Control Room Grid). Height strictly matched (h-full).",
+      "billing": "grid-cols-12 gap-6. Main content col-span-8, receipt col-span-4.",
+      "captain_menu": "grid-cols-2 md:grid-cols-3 gap-4 mobile-optimized."
+    }
+  },
+  "surfaces_and_materials": {
+    "cards": "Flat solid backgrounds (bg-white), 1px subtle border (border-[#E0DBD3]), soft custom shadow.",
+    "active_state": "Slight lift (-translate-y-0.5) and deeper shadow. For KDS tickets: glowing border on 'Rush' orders.",
+    "glassmorphism": "Only for Captain app sticky bottom-bar (backdrop-blur-xl bg-[#F9F8F6]/80 border-t border-[#E0DBD3]). DO NOT use for heavy data panels."
+  },
+  "role_specific_ui": {
+    "captain_app": {
+      "layout": "Mobile-first list/grid. Large touch targets (min-h-[48px]).",
+      "features": "Sticky bottom navigation and 'View Cart' bar. Quick +/- quantity buttons."
+    },
+    "kitchen_display_kds": {
+      "layout": "Dense multi-column ticket grid.",
+      "features": "Color-coded headers based on wait time (Green < 10m, Yellow 10-20m, Red > 20m). Large 'Bump/Done' button."
+    },
+    "billing_dashboard": {
+      "layout": "Desktop wide. Left panel: Active tables/Orders. Right panel: Live bill calculation.",
+      "features": "Clear, tabular breakdown of taxes, discounts, and totals."
+    },
+    "admin_panel": {
+      "layout": "Standard sidebar nav. Data-heavy tables.",
+      "features": "Use Shadcn Table. No generic cards wrapping tables—let tables breathe with 1px border."
+    }
+  },
+  "components": {
+    "buttons": "Shadcn based. Primary buttons must use #C25934 background with white text. Apply optical alignment.",
+    "inputs": "Shadcn based. Subtle background (#F2EFE9), 1px border. High contrast on focus.",
+    "modals": "Shadcn Dialog. Deep backdrop blur overlay (bg-black/40 backdrop-blur-sm).",
+    "toast": "Use Sonner. Ensure toasts appear at top-center for Kitchen, bottom-center for Captain app."
+  },
+  "icons": {
+    "library": "lucide-react",
+    "rules": "Use for navigation, quick actions, and status indicators. Keep stroke width consistent (1.5px or 2px)."
+  },
+  "images": {
+    "rules": "Main agent MUST use these URLs for placeholders. DO NOT use generic placeholder services.",
+    "categories": [
+      {
+        "id": "restaurant_logo",
+        "description": "Minimalist logo for the auth/login screens",
+        "url": "https://images.unsplash.com/photo-1770993136387-e27c9d30782d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODF8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwcmVzdGF1cmFudCUyMGxvZ28lMjBzaWdufGVufDB8fHx8MTc3NjQwMzEzMnww&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "id": "menu_item_1",
+        "description": "Seafood pasta / Main Course",
+        "url": "https://images.unsplash.com/photo-1762922425232-ab2b6b251739?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwxfHxnb3VybWV0JTIwZm9vZCUyMHBsYXRlJTIwdG9wJTIwdmlld3xlbnwwfHx8fDE3NzY0MDMxMDh8MA&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "id": "menu_item_2",
+        "description": "Grilled chicken salad",
+        "url": "https://images.unsplash.com/photo-1761315600943-d8a5bb0c499f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDk1NzZ8MHwxfHNlYXJjaHwyfHxnb3VybWV0JTIwZm9vZCUyMHBsYXRlJTIwdG9wJTIwdmlld3xlbnwwfHx8fDE3NzY0MDMxMDh8MA&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "id": "menu_item_3",
+        "description": "Mushroom salad",
+        "url": "https://images.pexels.com/photos/5865234/pexels-photo-5865234.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+      },
+      {
+        "id": "menu_item_4",
+        "description": "Beverage / Coffee",
+        "url": "https://images.unsplash.com/photo-1712727537456-3fc29b381ba3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAxODF8MHwxfHNlYXJjaHwyfHxyZXN0YXVyYW50JTIwaW50ZXJpb3IlMjBibHVyfGVufDB8fHx8MTc3NjQwMzEwOHww&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "id": "auth_background",
+        "description": "Warm organic texture for login screen background split",
+        "url": "https://images.pexels.com/photos/6789297/pexels-photo-6789297.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+      }
+    ]
+  },
+  "instructions_to_main_agent": [
+    "CRITICAL: Do NOT use Inter, Roboto, or Open Sans for headings. Implement 'Work Sans' and 'IBM Plex Sans' via Google Fonts.",
+    "Implement the 4 distinct views: Captain (Mobile-first Menu/Cart), KDS (Grid of tickets), Billing (Split screen), Admin (Tables).",
+    "Use standard HTML tags (div, section) styled with Tailwind for main layouts; reserve Shadcn components for complex interactions (Dialog, Select, Tabs).",
+    "Ensure all interactive elements (buttons, inputs, links, cart items) include data-testid attributes for testing (e.g., data-testid='place-order-btn').",
+    "Mock real-time updates and backend integration in the MVP via state or context for now, highlighting 'mocked' functionality where necessary.",
+    "For KDS: Use 'Control Room' grid layout. Set parent grid with gap-4 and make sure ticket cards have h-full.",
+    "For Captain App: Implement generous spacing (p-6/p-8) for touch targets to avoid mis-taps during a lunch rush.",
+    "Contrast check: Ensure text on the primary button color (#C25934) is white. Do not rely on default gray inheritance.",
+    "Avoid generic borders. Tint borders to the warm tone (#E0DBD3).",
+    "DO NOT use full-screen gradients. Keep the UI mostly solid #F9F8F6 (Bone White) with white cards."
+  ]
+}
