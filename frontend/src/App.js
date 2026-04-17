@@ -5,6 +5,7 @@ import CaptainApp from "@/pages/CaptainApp";
 import KitchenDisplay from "@/pages/KitchenDisplay";
 import BillingDashboard from "@/pages/BillingDashboard";
 import AdminPanel from "@/pages/AdminPanel";
+import OwnerPanel from "@/pages/OwnerPanel";
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/kitchen" element={<KitchenDisplay />} />
           <Route path="/billing" element={<BillingDashboard />} />
           <Route path="/admin" element={<AdminPanel />} />
+          <Route path="/owner" element={<OwnerPanel />} />
         </Routes>
       </BrowserRouter>
       <Toaster position="top-center" />

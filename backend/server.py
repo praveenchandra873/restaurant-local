@@ -4,6 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
+import hashlib
 from pathlib import Path
 from pydantic import BaseModel, Field, ConfigDict
 from typing import List, Optional
@@ -415,6 +416,290 @@ async def update_bill_payment(bill_id: str, input: BillPaymentUpdate):
         )
     
     return Bill(**result)
+
+
+# ============== OWNER / STAFF MANAGEMENT ==============
+
+class SalaryType(str, Enum):
+    monthly = "monthly"
+    daily = "daily"
+
+class AttendanceStatus(str, Enum):
+    present = "present"
+    absent = "absent"
+    half_day = "half_day"
+
+class Staff(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    name: str
+    role: str
+    phone: str
+    salary_type: SalaryType
+    salary_amount: float
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class StaffCreate(BaseModel):
+    name: str
+    role: str
+    phone: str
+    salary_type: SalaryType
+    salary_amount: float
+
+class StaffUpdate(BaseModel):
+    name: Optional[str] = None
+    role: Optional[str] = None
+    phone: Optional[str] = None
+    salary_type: Optional[SalaryType] = None
+    salary_amount: Optional[float] = None
+
+class Attendance(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    staff_id: str
+    staff_name: str
+    date: str  # YYYY-MM-DD format
+    status: AttendanceStatus
+
+class AttendanceCreate(BaseModel):
+    staff_id: str
+    staff_name: str
+    date: str
+    status: AttendanceStatus
+
+class SalaryRecord(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    staff_id: str
+    staff_name: str
+    month: int
+    year: int
+    salary_type: SalaryType
+    base_salary: float
+    days_present: int
+    half_days: int
+    total_working_days: int
+    calculated_salary: float
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+class SalaryGenerate(BaseModel):
+    staff_id: str
+    month: int
+    year: int
+    total_working_days: int
+
+class OwnerPasswordVerify(BaseModel):
+    password: str
+
+class OwnerPasswordChange(BaseModel):
+    current_password: str
+    new_password: str
+
+def hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# --- Owner Password ---
+@api_router.post("/owner/verify")
+async def verify_owner_password(input: OwnerPasswordVerify):
+    settings = await db.settings.find_one({"key": "owner_password"}, {"_id": 0})
+    if not settings:
+        # Default password on first use
+        default_hash = hash_password("owner123")
+        await db.settings.insert_one({"key": "owner_password", "value": default_hash})
+        settings = {"value": default_hash}
+
+    if hash_password(input.password) == settings["value"]:
+        return {"verified": True}
+    raise HTTPException(status_code=401, detail="Invalid password")
+
+@api_router.post("/owner/change-password")
+async def change_owner_password(input: OwnerPasswordChange):
+    settings = await db.settings.find_one({"key": "owner_password"}, {"_id": 0})
+    if not settings or hash_password(input.current_password) != settings["value"]:
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    await db.settings.update_one(
+        {"key": "owner_password"},
+        {"$set": {"value": hash_password(input.new_password)}}
+    )
+    return {"message": "Password changed successfully"}
+
+# --- Staff CRUD ---
+@api_router.get("/staff", response_model=List[Staff])
+async def get_staff():
+    staff = await db.staff.find({}, {"_id": 0}).to_list(1000)
+    for s in staff:
+        if isinstance(s.get('created_at'), str):
+            s['created_at'] = datetime.fromisoformat(s['created_at'])
+    return staff
+
+@api_router.post("/staff", response_model=Staff)
+async def create_staff(input: StaffCreate):
+    staff_obj = Staff(**input.model_dump())
+    doc = staff_obj.model_dump()
+    doc['created_at'] = doc['created_at'].isoformat()
+    await db.staff.insert_one(doc)
+    return staff_obj
+
+@api_router.put("/staff/{staff_id}", response_model=Staff)
+async def update_staff(staff_id: str, input: StaffUpdate):
+    update_data = {k: v for k, v in input.model_dump().items() if v is not None}
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+    result = await db.staff.find_one_and_update(
+        {"id": staff_id}, {"$set": update_data}, return_document=True
+    )
+    if not result:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    result.pop('_id', None)
+    if isinstance(result.get('created_at'), str):
+        result['created_at'] = datetime.fromisoformat(result['created_at'])
+    return Staff(**result)
+
+@api_router.delete("/staff/{staff_id}")
+async def delete_staff(staff_id: str):
+    result = await db.staff.delete_one({"id": staff_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Staff not found")
+    return {"message": "Staff deleted"}
+
+# --- Attendance ---
+@api_router.get("/attendance")
+async def get_attendance(staff_id: Optional[str] = None, month: Optional[int] = None, year: Optional[int] = None):
+    query = {}
+    if staff_id:
+        query["staff_id"] = staff_id
+    if month and year:
+        query["date"] = {"$regex": f"^{year}-{str(month).zfill(2)}"}
+    records = await db.attendance.find(query, {"_id": 0}).to_list(10000)
+    return records
+
+@api_router.post("/attendance")
+async def mark_attendance(input: AttendanceCreate):
+    # Upsert: update if exists for same staff+date, otherwise insert
+    existing = await db.attendance.find_one(
+        {"staff_id": input.staff_id, "date": input.date}, {"_id": 0}
+    )
+    if existing:
+        await db.attendance.update_one(
+            {"staff_id": input.staff_id, "date": input.date},
+            {"$set": {"status": input.status}}
+        )
+        existing["status"] = input.status
+        return existing
+
+    att_obj = Attendance(**input.model_dump())
+    doc = att_obj.model_dump()
+    await db.attendance.insert_one(doc)
+    return att_obj.model_dump()
+
+# --- Attendance Summary ---
+@api_router.get("/attendance/summary/{staff_id}/{year}/{month}")
+async def get_attendance_summary(staff_id: str, year: int, month: int):
+    date_prefix = f"{year}-{str(month).zfill(2)}"
+    records = await db.attendance.find(
+        {"staff_id": staff_id, "date": {"$regex": f"^{date_prefix}"}},
+        {"_id": 0}
+    ).to_list(31)
+
+    present = sum(1 for r in records if r["status"] == "present")
+    absent = sum(1 for r in records if r["status"] == "absent")
+    half_day = sum(1 for r in records if r["status"] == "half_day")
+
+    return {
+        "staff_id": staff_id,
+        "month": month,
+        "year": year,
+        "days_present": present,
+        "days_absent": absent,
+        "half_days": half_day,
+        "total_marked": len(records),
+        "records": records
+    }
+
+# --- Salary ---
+@api_router.get("/salary")
+async def get_salaries(month: Optional[int] = None, year: Optional[int] = None):
+    query = {}
+    if month:
+        query["month"] = month
+    if year:
+        query["year"] = year
+    salaries = await db.salary_records.find(query, {"_id": 0}).sort("generated_at", -1).to_list(1000)
+    for s in salaries:
+        if isinstance(s.get('generated_at'), str):
+            s['generated_at'] = datetime.fromisoformat(s['generated_at'])
+    return salaries
+
+@api_router.post("/salary/generate")
+async def generate_salary(input: SalaryGenerate):
+    # Get staff info
+    staff = await db.staff.find_one({"id": input.staff_id}, {"_id": 0})
+    if not staff:
+        raise HTTPException(status_code=404, detail="Staff not found")
+
+    # Get attendance summary
+    date_prefix = f"{input.year}-{str(input.month).zfill(2)}"
+    records = await db.attendance.find(
+        {"staff_id": input.staff_id, "date": {"$regex": f"^{date_prefix}"}},
+        {"_id": 0}
+    ).to_list(31)
+
+    days_present = sum(1 for r in records if r["status"] == "present")
+    half_days = sum(1 for r in records if r["status"] == "half_day")
+
+    # Calculate salary
+    base = staff["salary_amount"]
+    if staff["salary_type"] == "monthly":
+        effective_days = days_present + (half_days * 0.5)
+        calculated = (base / input.total_working_days) * effective_days if input.total_working_days > 0 else 0
+    else:  # daily
+        calculated = (base * days_present) + (base * 0.5 * half_days)
+
+    calculated = round(calculated, 2)
+
+    # Check if already generated
+    existing = await db.salary_records.find_one(
+        {"staff_id": input.staff_id, "month": input.month, "year": input.year},
+        {"_id": 0}
+    )
+    if existing:
+        # Update existing record
+        await db.salary_records.update_one(
+            {"staff_id": input.staff_id, "month": input.month, "year": input.year},
+            {"$set": {
+                "days_present": days_present,
+                "half_days": half_days,
+                "total_working_days": input.total_working_days,
+                "calculated_salary": calculated,
+                "generated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+        existing.update({
+            "days_present": days_present,
+            "half_days": half_days,
+            "total_working_days": input.total_working_days,
+            "calculated_salary": calculated,
+        })
+        return existing
+
+    salary_obj = SalaryRecord(
+        staff_id=input.staff_id,
+        staff_name=staff["name"],
+        month=input.month,
+        year=input.year,
+        salary_type=staff["salary_type"],
+        base_salary=base,
+        days_present=days_present,
+        half_days=half_days,
+        total_working_days=input.total_working_days,
+        calculated_salary=calculated
+    )
+    doc = salary_obj.model_dump()
+    doc['generated_at'] = doc['generated_at'].isoformat()
+    await db.salary_records.insert_one(doc)
+    return salary_obj.model_dump()
+
 
 app.include_router(api_router)
 

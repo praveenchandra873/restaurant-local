@@ -151,6 +151,15 @@ async def seed_data():
     await db.menu_items.insert_many(menu_items)
     print(f"Seeded {len(menu_items)} menu items")
     
+    # Seed owner password (default: owner123)
+    import hashlib
+    await db.settings.delete_many({})
+    await db.settings.insert_one({
+        "key": "owner_password",
+        "value": hashlib.sha256("owner123".encode()).hexdigest()
+    })
+    print("Seeded owner password (default: owner123)")
+    
     print("Database seeding completed successfully!")
     client.close()
 

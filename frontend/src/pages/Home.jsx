@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { ChefHat, Utensils, Calculator, Settings } from "lucide-react";
+import { ChefHat, Utensils, Calculator, Settings, Lock } from "lucide-react";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -36,6 +36,14 @@ const Home = () => {
       icon: Settings,
       color: "bg-[#2A2F2B]",
       path: "/admin"
+    },
+    {
+      id: "owner",
+      title: "Owner Panel",
+      description: "Staff salary & attendance (Protected)",
+      icon: Lock,
+      color: "bg-[#6B3A5D]",
+      path: "/owner"
     }
   ];
 
@@ -56,7 +64,7 @@ const Home = () => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl w-full">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl w-full">
         {roles.map((role) => {
           const Icon = role.icon;
           return (
