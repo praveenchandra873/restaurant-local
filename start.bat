@@ -55,6 +55,16 @@ echo  [OK] MongoDB running
 echo  [..] Starting Backend (port 8001)...
 cd /d "%~dp0backend"
 
+:: Ensure .env exists
+if not exist ".env" (
+    echo  [!!] Creating backend .env file...
+)
+(
+echo MONGO_URL=mongodb://localhost:27017
+echo DB_NAME=dine_local_hub
+echo CORS_ORIGINS=*
+) > ".env"
+
 :: Check if venv exists and has uvicorn, if not recreate
 if not exist "venv\Scripts\activate.bat" (
     echo  [!!] Virtual env not found, creating...
