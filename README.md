@@ -33,13 +33,10 @@ Then to start every day:
 
 ### Method 3: Direct Install - Windows
 
-1. Right-click PowerShell → **Run as Administrator**
-2. Run:
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process
-.\setup-windows.ps1
-```
-3. Then to start every day: **double-click `start.bat`**
+1. **Double-click `setup-windows.bat`**  — that's it!
+   - It will ask for Administrator permission — click **Yes**
+   - Wait for setup to complete (5-10 minutes on first run)
+2. Then to start every day: **double-click `start.bat`**
 
 ---
 
