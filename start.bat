@@ -60,7 +60,7 @@ echo  [OK] Backend started
 :: ---- START FRONTEND ----
 echo  [..] Starting Frontend (port 3000)...
 cd /d "%~dp0frontend"
-start "DLH-Frontend" /min cmd /k "set HOST=0.0.0.0&& set PORT=3000&& yarn start"
+start "DLH-Frontend" /min cmd /k "set HOST=0.0.0.0&& set PORT=3000&& npx craco start"
 echo  [..] Waiting for frontend to compile (about 30 seconds)...
 timeout /t 30 /nobreak >nul
 echo  [OK] Frontend started
