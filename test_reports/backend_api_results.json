@@ -1,0 +1,102 @@
+{
+  "timestamp": "2026-04-17T05:26:48.261941",
+  "total_tests": 16,
+  "passed_tests": 16,
+  "success_rate": 100.0,
+  "test_results": [
+    {
+      "test": "Root API endpoint",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get all tables",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create table",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Update table status",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get menu items",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create menu item",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Update menu item",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create order",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get all orders",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get order by ID",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Update order status to preparing",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Update order status to ready",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create bill",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get all bills",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Update bill payment",
+      "success": true,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Delete menu item",
+      "success": true,
+      "details": "Status: 200"
+    }
+  ],
+  "created_items": {
+    "tables": [
+      "0049248d-4a7d-4f0b-8ec9-ae613b7d18bb"
+    ],
+    "menu_items": [
+      "9d0c5adb-4280-4166-8c3c-c52de80c6b67"
+    ],
+    "orders": [
+      "3ef3709e-6f57-4617-906f-33d93afe7b86"
+    ],
+    "bills": [
+      "b8770048-8d75-47ac-afa7-40bab7863fdd"
+    ]
+  }
+}
