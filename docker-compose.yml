@@ -1,0 +1,58 @@
+version: "3.8"
+
+# ============================================
+#  DINE LOCAL HUB - Docker Setup
+#  Simplest option: just needs Docker installed
+#  Run: docker-compose up
+# ============================================
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: dlh-mongodb
+    restart: always
+    volumes:
+      - dlh_mongo_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - dlh-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dlh-backend
+    restart: always
+    ports:
+      - "8001:8001"
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=dine_local_hub
+      - CORS_ORIGINS=*
+    depends_on:
+      - mongodb
+    networks:
+      - dlh-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - REACT_APP_BACKEND_URL=http://HOST_IP:8001
+    container_name: dlh-frontend
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - dlh-network
+
+volumes:
+  dlh_mongo_data:
+
+networks:
+  dlh-network:
+    driver: bridge

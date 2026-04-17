@@ -33,6 +33,14 @@ Create an app for a restaurant which runs locally inside their restaurant networ
 ### Bug Fix (April 17, 2026)
 - Fixed: Captain can now add more items to an occupied table's existing order (single order approach - items append to existing order)
 
+## Setup Scripts Created (April 17, 2026)
+- `setup.sh` - One-click setup for Linux/Mac (installs MongoDB, Python, Node.js, configures everything)
+- `setup-windows.ps1` - One-click setup for Windows (uses Chocolatey to install dependencies)
+- `setup-docker.sh` + `docker-compose.yml` - Docker-based setup (simplest, only needs Docker)
+- `start.sh` / `start.bat` - Auto-generated daily startup scripts
+- `stop.sh` / `stop.bat` - Stop all services
+- `README.md` - Non-technical guide with all 3 setup methods
+
 ## Prioritized Backlog
 ### P0 (Critical)
 - All core features implemented ✅
