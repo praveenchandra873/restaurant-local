@@ -102,7 +102,6 @@ const CaptainApp = () => {
 
       toast.success("Order placed successfully!");
       setCart([]);
-      setSelectedTable(null);
       setNotes("");
       setShowCart(false);
       fetchTables();
@@ -262,9 +261,9 @@ const CaptainApp = () => {
                   <SelectValue placeholder="Choose a table" />
                 </SelectTrigger>
                 <SelectContent>
-                  {tables.filter(t => t.status === "available").map((table) => (
+                  {tables.map((table) => (
                     <SelectItem key={table.id} value={table.id} data-testid={`table-option-${table.id}`}>
-                      Table {table.table_number} (Capacity: {table.capacity})
+                      Table {table.table_number} (Cap: {table.capacity}) {table.status === "occupied" ? " - Active Order" : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>

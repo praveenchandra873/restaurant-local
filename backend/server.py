@@ -248,6 +248,53 @@ async def get_orders_by_table(table_id: str):
 
 @api_router.post("/orders", response_model=Order)
 async def create_order(input: OrderCreate):
+    # Check if there's an active order for this table (pending/preparing)
+    existing_order = await db.orders.find_one(
+        {"table_id": input.table_id, "status": {"$in": ["pending", "preparing", "ready"]}},
+        {"_id": 0}
+    )
+    
+    if existing_order:
+        # Append new items to the existing order
+        new_items = [item.model_dump() for item in input.items]
+        existing_items = existing_order.get("items", [])
+        
+        # Merge items: if same menu_item_id exists, increase quantity; otherwise add new
+        for new_item in new_items:
+            found = False
+            for existing_item in existing_items:
+                if existing_item["menu_item_id"] == new_item["menu_item_id"]:
+                    existing_item["quantity"] += new_item["quantity"]
+                    found = True
+                    break
+            if not found:
+                existing_items.append(new_item)
+        
+        new_total = sum(item["price"] * item["quantity"] for item in existing_items)
+        new_notes = existing_order.get("notes", "")
+        if input.notes:
+            new_notes = f"{new_notes}\n{input.notes}".strip() if new_notes else input.notes
+        
+        # Reset status to pending so kitchen sees the updated order
+        result = await db.orders.find_one_and_update(
+            {"id": existing_order["id"]},
+            {"$set": {
+                "items": existing_items,
+                "total_amount": new_total,
+                "notes": new_notes,
+                "status": "pending",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }},
+            return_document=True
+        )
+        result.pop('_id', None)
+        if isinstance(result.get('created_at'), str):
+            result['created_at'] = datetime.fromisoformat(result['created_at'])
+        if isinstance(result.get('updated_at'), str):
+            result['updated_at'] = datetime.fromisoformat(result['updated_at'])
+        return Order(**result)
+    
+    # No active order exists - create a new one
     total = sum(item.price * item.quantity for item in input.items)
     order_obj = Order(**input.model_dump(), total_amount=total)
     doc = order_obj.model_dump()
