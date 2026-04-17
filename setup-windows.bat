@@ -91,7 +91,11 @@ echo CORS_ORIGINS=*
 python -m venv venv
 call venv\Scripts\activate.bat
 pip install --upgrade pip -q
-pip install -r requirements.txt -q
+if exist "requirements-local.txt" (
+    pip install -r requirements-local.txt -q
+) else (
+    pip install -r requirements.txt -q
+)
 echo  [OK] Backend packages installed
 
 :: Seed database

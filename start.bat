@@ -55,16 +55,24 @@ echo  [OK] MongoDB running
 echo  [..] Starting Backend (port 8001)...
 cd /d "%~dp0backend"
 
-:: Check if venv exists, if not create it
-if not exist "venv" (
+:: Check if venv exists and has uvicorn, if not recreate
+if not exist "venv\Scripts\activate.bat" (
     echo  [!!] Virtual env not found, creating...
     python -m venv venv
-    call venv\Scripts\activate.bat
-    pip install -r requirements.txt -q
-    call deactivate
 )
+call venv\Scripts\activate.bat
+python -c "import uvicorn" >nul 2>&1
+if errorlevel 1 (
+    echo  [!!] Installing backend packages...
+    if exist "requirements-local.txt" (
+        pip install -r requirements-local.txt
+    ) else (
+        pip install -r requirements.txt
+    )
+)
+call deactivate
 
-start "DLH-Backend" /min cmd /k "call venv\Scripts\activate.bat && python -m uvicorn server:app --host 0.0.0.0 --port 8001"
+start "DLH-Backend" cmd /k "cd /d "%~dp0backend" && call venv\Scripts\activate.bat && python -m uvicorn server:app --host 0.0.0.0 --port 8001"
 timeout /t 5 /nobreak >nul
 echo  [OK] Backend started
 
@@ -79,7 +87,7 @@ if not exist "node_modules" (
 )
 
 :: Use explicit path to craco binary (avoids PATH issues on Windows)
-start "DLH-Frontend" /min cmd /k "set HOST=0.0.0.0&& set PORT=3000&& .\node_modules\.bin\craco.cmd start"
+start "DLH-Frontend" cmd /k "set HOST=0.0.0.0&& set PORT=3000&& .\node_modules\.bin\craco.cmd start"
 echo  [..] Waiting for frontend to compile (about 30 seconds)...
 timeout /t 30 /nobreak >nul
 echo  [OK] Frontend started
