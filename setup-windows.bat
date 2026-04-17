@@ -21,12 +21,14 @@ if %errorlevel% neq 0 (
     echo.
     echo  [!!] Administrator access required.
     echo  [!!] Restarting with admin rights...
+    echo  [!!] Please click YES on the popup.
     echo.
-    powershell -Command "Start-Process '%~f0' -Verb RunAs"
+    powershell -Command "Start-Process cmd -ArgumentList '/c cd /d \"%~dp0\" && powershell -ExecutionPolicy Bypass -File \"%~dp0setup-windows.ps1\"' -Verb RunAs"
     exit /b
 )
 
-REM Run the PowerShell setup script
+REM Already admin, run directly
+cd /d "%~dp0"
 powershell -ExecutionPolicy Bypass -File "%~dp0setup-windows.ps1"
 
 pause

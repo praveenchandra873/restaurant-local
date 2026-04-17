@@ -179,9 +179,11 @@ function Setup-Frontend {
     # Install dependencies
     yarn install
 
-    # Create .env file
+    # Create .env file - HOST=0.0.0.0 is critical so React binds to all network interfaces
     @"
 REACT_APP_BACKEND_URL=http://${localIP}:8001
+HOST=0.0.0.0
+PORT=3000
 "@ | Out-File -FilePath ".env" -Encoding UTF8 -NoNewline
 
     Write-Ok "Frontend setup complete"
@@ -204,36 +206,62 @@ echo  ================================================
 echo.
 
 REM Get Local IP
+set LOCAL_IP=127.0.0.1
 for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address"') do (
-    set LOCAL_IP=%%a
-    goto :found_ip
+    for /f "tokens=* delims= " %%b in ("%%a") do (
+        set LOCAL_IP=%%b
+        goto :found_ip
+    )
 )
 :found_ip
-set LOCAL_IP=%LOCAL_IP: =%
 
-REM Update frontend .env
+echo  [OK] Your Network IP: %LOCAL_IP%
+
+REM Update frontend .env with current IP and HOST binding
 echo REACT_APP_BACKEND_URL=http://%LOCAL_IP%:8001> "%~dp0frontend\.env"
+echo HOST=0.0.0.0>> "%~dp0frontend\.env"
+echo PORT=3000>> "%~dp0frontend\.env"
+
+REM Add Firewall rules (silently, in case they don't exist yet)
+netsh advfirewall firewall delete rule name="DLH Backend" >NUL 2>&1
+netsh advfirewall firewall delete rule name="DLH Frontend" >NUL 2>&1
+netsh advfirewall firewall add rule name="DLH Backend" dir=in action=allow protocol=TCP localport=8001 >NUL 2>&1
+netsh advfirewall firewall add rule name="DLH Frontend" dir=in action=allow protocol=TCP localport=3000 >NUL 2>&1
+echo  [OK] Firewall rules configured
 
 REM Start MongoDB (if not running)
 tasklist /FI "IMAGENAME eq mongod.exe" 2>NUL | find /I "mongod.exe" >NUL
 if errorlevel 1 (
-    echo [!!] Starting MongoDB...
-    start /B mongod --dbpath C:\data\db
-    timeout /t 3 >NUL
+    echo  [!!] Starting MongoDB...
+    start "" /B mongod --dbpath C:\data\db 2>NUL
+    timeout /t 3 /nobreak >NUL
 )
-echo [OK] MongoDB running
+echo  [OK] MongoDB running
+
+REM Kill any old instances on ports 8001 and 3000
+for /f "tokens=5" %%p in ('netstat -aon ^| findstr ":8001" ^| findstr "LISTENING"') do (taskkill /PID %%p /F >NUL 2>&1)
+for /f "tokens=5" %%p in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING"') do (taskkill /PID %%p /F >NUL 2>&1)
+timeout /t 2 /nobreak >NUL
 
 REM Start Backend
-echo [OK] Starting Backend...
+echo  [OK] Starting Backend on port 8001...
 cd /d "%~dp0backend"
-start "DLH-Backend" cmd /c "venv\Scripts\activate && uvicorn server:app --host 0.0.0.0 --port 8001"
-timeout /t 3 >NUL
+start "DLH-Backend" /min cmd /k "call venv\Scripts\activate.bat && uvicorn server:app --host 0.0.0.0 --port 8001"
+timeout /t 5 /nobreak >NUL
+
+REM Verify backend is running
+curl -s http://localhost:8001/api/ >NUL 2>&1
+if errorlevel 1 (
+    echo  [!!] Backend may still be loading, waiting...
+    timeout /t 5 /nobreak >NUL
+)
 
 REM Start Frontend
-echo [OK] Starting Frontend...
+echo  [OK] Starting Frontend on port 3000...
 cd /d "%~dp0frontend"
-start "DLH-Frontend" cmd /c "set PORT=3000 && set HOST=0.0.0.0 && yarn start"
-timeout /t 8 >NUL
+start "DLH-Frontend" /min cmd /k "set HOST=0.0.0.0&& set PORT=3000&& yarn start"
+echo  [!!] Waiting for frontend to compile (this takes ~30 seconds)...
+timeout /t 30 /nobreak >NUL
 
 echo.
 echo  ================================================
@@ -242,14 +270,17 @@ echo       DINE LOCAL HUB IS RUNNING!
 echo.
 echo       Your Network IP: %LOCAL_IP%
 echo.
-echo       Open on any device connected to WiFi:
+echo       Open on ANY device connected to your WiFi:
 echo.
 echo       Captain (Phone):   http://%LOCAL_IP%:3000/captain
 echo       Kitchen (Tablet):  http://%LOCAL_IP%:3000/kitchen
 echo       Billing (Desktop): http://%LOCAL_IP%:3000/billing
 echo       Admin Panel:       http://%LOCAL_IP%:3000/admin
 echo.
-echo       Close this window to keep running.
+echo       On THIS computer you can also use:
+echo       http://localhost:3000/captain
+echo.
+echo       DO NOT close the minimized DLH windows.
 echo       To stop: run stop.bat
 echo.
 echo  ================================================
@@ -260,10 +291,28 @@ pause
     # Create stop.bat
     @"
 @echo off
-echo Stopping Dine Local Hub...
-taskkill /FI "WINDOWTITLE eq DLH-Backend*" /F 2>NUL
-taskkill /FI "WINDOWTITLE eq DLH-Frontend*" /F 2>NUL
-echo All services stopped.
+title Dine Local Hub - Stopping
+echo.
+echo  Stopping Dine Local Hub...
+echo.
+
+REM Kill processes on ports 8001 and 3000
+for /f "tokens=5" %%p in ('netstat -aon ^| findstr ":8001" ^| findstr "LISTENING" 2^>NUL') do (
+    echo  Stopping Backend (PID %%p)...
+    taskkill /PID %%p /F >NUL 2>&1
+)
+for /f "tokens=5" %%p in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING" 2^>NUL') do (
+    echo  Stopping Frontend (PID %%p)...
+    taskkill /PID %%p /F >NUL 2>&1
+)
+
+REM Also kill by window title as backup
+taskkill /FI "WINDOWTITLE eq DLH-Backend*" /F >NUL 2>&1
+taskkill /FI "WINDOWTITLE eq DLH-Frontend*" /F >NUL 2>&1
+
+echo.
+echo  [OK] All services stopped.
+echo.
 pause
 "@ | Out-File -FilePath (Join-Path $scriptDir "stop.bat") -Encoding ASCII
 
@@ -330,6 +379,19 @@ Setup-Frontend
 
 Write-Step "7" "Creating startup scripts"
 Create-StartScript
+
+Write-Step "8" "Configuring Windows Firewall"
+# Add firewall rules so other devices on the network can connect
+try {
+    Remove-NetFirewallRule -DisplayName "DLH Backend" -ErrorAction SilentlyContinue
+    Remove-NetFirewallRule -DisplayName "DLH Frontend" -ErrorAction SilentlyContinue
+    New-NetFirewallRule -DisplayName "DLH Backend" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 8001 -ErrorAction Stop | Out-Null
+    New-NetFirewallRule -DisplayName "DLH Frontend" -Direction Inbound -Action Allow -Protocol TCP -LocalPort 3000 -ErrorAction Stop | Out-Null
+    Write-Ok "Firewall rules added for ports 3000 and 8001"
+} catch {
+    Write-Warn "Could not add firewall rules automatically."
+    Write-Warn "If other devices can't connect, manually allow ports 3000 and 8001 in Windows Firewall."
+}
 
 Write-Success
 pause

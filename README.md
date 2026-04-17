@@ -83,10 +83,12 @@ double-click stop.bat
 
 ## Troubleshooting
 
-**Q: Devices can't connect?**
+**Q: Devices can't connect / ERR_CONNECTION_REFUSED?**
+- Run `stop.bat` first, then run `start.bat` again (uses updated scripts with firewall fix)
+- If still not working, run `setup-windows.bat` again — it now adds firewall rules automatically
 - Make sure all devices are on the **same WiFi network**
-- Check if your firewall is blocking ports 3000 and 8001
-- On Windows: Allow through Windows Firewall when prompted
+- Try `http://localhost:3000/captain` on the server computer first — if that works but the IP doesn't, it's a firewall issue
+- Manual firewall fix: Windows Settings → Firewall → Allow an app → Allow "Node.js" and "Python" on Private networks
 
 **Q: How to find my IP address?**
 - Mac: System Preferences → Network → Your IP is shown
