@@ -33,13 +33,13 @@ Then to start every day:
 
 ### Method 3: Direct Install - Windows
 
-1. **Double-click `start.bat`** — that's it!
-2. Click **Yes** on the admin permission popup
-3. First run downloads and installs everything automatically (Python, Node.js, MongoDB, packages) — takes 5-10 minutes
+1. Right-click **`start.bat`** → **Run as administrator**
+2. Click **Yes** on the permission popup
+3. First run auto-installs everything (Python, Node.js, MongoDB) — takes 5-10 min
 4. After that, daily startup takes ~30 seconds
 5. To stop: double-click **`stop.bat`**
 
-> No setup needed. No technical knowledge needed. Just double-click `start.bat`.
+> First time: right-click → Run as administrator (needed to install Python/Node.js). After that you can just double-click.
 
 ---
 
