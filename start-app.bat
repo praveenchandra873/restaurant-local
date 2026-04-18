@@ -247,7 +247,7 @@ if not exist "node_modules" (
 )
 
 echo  [OK] Launching frontend...
-start "DLH-Frontend" /min cmd /k "cd /d "%~dp0frontend" && set HOST=0.0.0.0&& set PORT=3000&& .\node_modules\.bin\craco.cmd start"
+start "DLH-Frontend" /min cmd /k "cd /d "%~dp0frontend" && run.bat"
 echo      Compiling (~30 seconds)...
 timeout /t 30 /nobreak >nul
 
