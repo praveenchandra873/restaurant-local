@@ -8,7 +8,6 @@ echo       DINE LOCAL HUB - Restaurant Management System
 echo  ===========================================================
 echo.
 
-:: Make sure we are in the correct folder
 cd /d "%~dp0"
 echo  Folder: %cd%
 echo.
@@ -21,9 +20,7 @@ echo  [Step 1/7] Checking Python...
 set PYTHON_OK=0
 python --version >"%temp%\dlh_pyver.txt" 2>&1
 findstr /i "Python 3" "%temp%\dlh_pyver.txt" >nul 2>&1
-if %errorlevel% equ 0 (
-    set PYTHON_OK=1
-)
+if %errorlevel% equ 0 set PYTHON_OK=1
 del "%temp%\dlh_pyver.txt" >nul 2>&1
 
 if "%PYTHON_OK%"=="1" (
@@ -31,34 +28,28 @@ if "%PYTHON_OK%"=="1" (
     goto :python_done
 )
 
-echo  [!!] Python not found. Downloading installer...
+echo  [!!] Python not found. Downloading...
 if not exist "installers" mkdir "installers"
-
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Write-Host '      Downloading Python 3.11 (~25MB)...'; $ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile 'installers\python-setup.exe'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Write-Host '      Downloading Python 3.11...'; $ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe' -OutFile 'installers\python-setup.exe'"
 
 if not exist "installers\python-setup.exe" (
-    echo  [ERROR] Download failed. Install Python manually:
-    echo          https://www.python.org/downloads/
-    echo          CHECK "Add Python to PATH" during install!
+    echo  [ERROR] Download failed. Install manually: https://www.python.org/downloads/
     goto :the_end
 )
 
-echo  [!!] Installing Python (1-2 minutes, please wait)...
+echo  [!!] Installing Python...
 start /wait "" "installers\python-setup.exe" /quiet InstallAllUsers=1 PrependPath=1 Include_pip=1
-echo  [!!] Installer finished.
-
 set "PATH=C:\Program Files\Python311;C:\Program Files\Python311\Scripts;%LOCALAPPDATA%\Programs\Python\Python311;%LOCALAPPDATA%\Programs\Python\Python311\Scripts;%PATH%"
+del "installers\python-setup.exe" >nul 2>&1
 
 python --version >"%temp%\dlh_pyver2.txt" 2>&1
 findstr /i "Python 3" "%temp%\dlh_pyver2.txt" >nul 2>&1
 if %errorlevel% neq 0 (
-    echo  [!!] Python installed. Please CLOSE this window and run start.bat again.
-    echo  [!!] Windows needs to refresh PATH after installation.
+    echo  [!!] Python installed. CLOSE this window and run start.bat again.
     goto :the_end
 )
 del "%temp%\dlh_pyver2.txt" >nul 2>&1
 echo  [OK] Python installed!
-del "installers\python-setup.exe" >nul 2>&1
 
 :python_done
 
@@ -70,9 +61,7 @@ echo  [Step 2/7] Checking Node.js...
 set NODE_OK=0
 node --version >"%temp%\dlh_nodever.txt" 2>&1
 findstr /r "v[0-9]" "%temp%\dlh_nodever.txt" >nul 2>&1
-if %errorlevel% equ 0 (
-    set NODE_OK=1
-)
+if %errorlevel% equ 0 set NODE_OK=1
 del "%temp%\dlh_nodever.txt" >nul 2>&1
 
 if "%NODE_OK%"=="1" (
@@ -80,30 +69,26 @@ if "%NODE_OK%"=="1" (
     goto :node_done
 )
 
-echo  [!!] Node.js not found. Downloading installer...
+echo  [!!] Node.js not found. Downloading...
 if not exist "installers" mkdir "installers"
-
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Write-Host '      Downloading Node.js 20 (~30MB)...'; $ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi' -OutFile 'installers\node-setup.msi'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Write-Host '      Downloading Node.js 20...'; $ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi' -OutFile 'installers\node-setup.msi'"
 
 if not exist "installers\node-setup.msi" (
-    echo  [ERROR] Download failed. Install Node.js manually:
-    echo          https://nodejs.org/
+    echo  [ERROR] Download failed. Install manually: https://nodejs.org/
     goto :the_end
 )
 
-echo  [!!] Installing Node.js (1-2 minutes, please wait)...
+echo  [!!] Installing Node.js...
 start /wait msiexec /i "installers\node-setup.msi" /qn /norestart
-echo  [!!] Installer finished.
-
 set "PATH=C:\Program Files\nodejs;%APPDATA%\npm;%PATH%"
+del "installers\node-setup.msi" >nul 2>&1
 
 node --version >nul 2>&1
 if errorlevel 1 (
-    echo  [!!] Node.js installed. Please CLOSE this window and run start.bat again.
+    echo  [!!] Node.js installed. CLOSE this window and run start.bat again.
     goto :the_end
 )
 echo  [OK] Node.js installed!
-del "installers\node-setup.msi" >nul 2>&1
 
 :node_done
 
@@ -119,7 +104,7 @@ if errorlevel 1 (
 echo  [OK] Yarn ready
 
 :: ================================================================
-:: STEP 4: MONGODB (portable)
+:: STEP 4: MONGODB
 :: ================================================================
 echo  [Step 4/7] Checking MongoDB...
 
@@ -137,25 +122,22 @@ if exist "%MONGO_PORTABLE%" (
     goto :mongo_done
 )
 
-echo  [!!] Downloading portable MongoDB (~200MB, please wait)...
+echo  [!!] Downloading portable MongoDB (~200MB)...
 if not exist "mongodb\bin" mkdir "mongodb\bin"
-
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Write-Host '      Downloading...'; $ProgressPreference='SilentlyContinue'; Invoke-WebRequest -Uri 'https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-7.0.20.zip' -OutFile 'mongodb\mongo.zip'; Write-Host '      Extracting...'; Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::ExtractToDirectory('mongodb\mongo.zip','mongodb\temp'); $d=Get-ChildItem 'mongodb\temp' -Directory|Select -First 1; Copy-Item (Join-Path $d.FullName 'bin\*') 'mongodb\bin\' -Force; Remove-Item 'mongodb\temp' -Recurse -Force; Remove-Item 'mongodb\mongo.zip' -Force; Write-Host '      Done!'"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "$ProgressPreference='SilentlyContinue'; Write-Host '      Downloading...'; Invoke-WebRequest -Uri 'https://fastdl.mongodb.org/windows/mongodb-windows-x86_64-7.0.20.zip' -OutFile 'mongodb\mongo.zip'; Write-Host '      Extracting...'; Add-Type -AssemblyName System.IO.Compression.FileSystem; [IO.Compression.ZipFile]::ExtractToDirectory('mongodb\mongo.zip','mongodb\temp'); $d=Get-ChildItem 'mongodb\temp' -Directory|Select -First 1; Copy-Item (Join-Path $d.FullName 'bin\*') 'mongodb\bin\' -Force; Remove-Item 'mongodb\temp' -Recurse -Force; Remove-Item 'mongodb\mongo.zip' -Force; Write-Host '      Done!'"
 
 if exist "%MONGO_PORTABLE%" (
     set "MONGO_CMD=%MONGO_PORTABLE%"
     echo  [OK] MongoDB ready
     goto :mongo_done
 )
-
-echo  [ERROR] MongoDB download failed. Install manually:
-echo          https://www.mongodb.com/try/download/community
+echo  [ERROR] MongoDB download failed.
 goto :the_end
 
 :mongo_done
 
 :: ================================================================
-:: STEP 5: NETWORK CONFIG
+:: STEP 5: NETWORK + CONFIG
 :: ================================================================
 echo  [Step 5/7] Configuring...
 
@@ -166,7 +148,6 @@ for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address"') do (
 :ip_set
 echo  [OK] Network IP: %LOCAL_IP%
 
-:: Create .env files
 cd /d "%~dp0"
 >backend\.env (
     echo MONGO_URL=mongodb://localhost:27017
@@ -180,20 +161,17 @@ cd /d "%~dp0"
     echo ENABLE_HEALTH_CHECK=false
 )
 
-:: Kill old processes on our ports
 for /f "tokens=5" %%p in ('netstat -aon ^| findstr ":8001" ^| findstr "LISTENING" 2^>nul') do taskkill /PID %%p /F >nul 2>&1
 for /f "tokens=5" %%p in ('netstat -aon ^| findstr ":3000" ^| findstr "LISTENING" 2^>nul') do taskkill /PID %%p /F >nul 2>&1
 
-:: Firewall (silent, ok if no admin)
 netsh advfirewall firewall add rule name="DLH-Back" dir=in action=allow protocol=TCP localport=8001 >nul 2>&1
 netsh advfirewall firewall add rule name="DLH-Front" dir=in action=allow protocol=TCP localport=3000 >nul 2>&1
 
 :: ================================================================
-:: STEP 6: START BACKEND
+:: STEP 6: START MONGODB + BACKEND
 :: ================================================================
 echo  [Step 6/7] Starting Backend...
 
-:: Start MongoDB
 tasklist /FI "IMAGENAME eq mongod.exe" 2>nul | find /I "mongod.exe" >nul
 if errorlevel 1 (
     if not exist "data\db" mkdir "data\db"
@@ -204,50 +182,19 @@ if errorlevel 1 (
     echo  [OK] MongoDB already running
 )
 
-:: Setup Python venv
-cd /d "%~dp0backend"
-if not exist "venv\Scripts\activate.bat" (
-    echo      Creating virtual environment...
-    python -m venv venv
-)
-
-call venv\Scripts\activate.bat
-
-:: Install packages if needed
-python -c "import uvicorn" >nul 2>&1
-if errorlevel 1 (
-    echo      Installing backend packages...
-    if exist "requirements-local.txt" (
-        pip install -r requirements-local.txt
-    ) else (
-        pip install fastapi uvicorn python-dotenv pymongo pydantic motor
-    )
-)
-
-:: Seed database if empty
-python -c "from motor.motor_asyncio import AsyncIOMotorClient;import asyncio,os;from dotenv import load_dotenv;from pathlib import Path;load_dotenv(Path('.env'));c=AsyncIOMotorClient(os.environ['MONGO_URL']);db=c[os.environ['DB_NAME']];n=asyncio.get_event_loop().run_until_complete(db.tables.count_documents({}));print(n)" 2>nul | findstr /r "^0$" >nul && (
-    echo      Seeding database...
-    python seed_db.py
-)
-call deactivate
-
-echo  [OK] Launching backend server...
-start "DLH-Backend" /min cmd /k "cd /d "%~dp0backend" && call venv\Scripts\activate.bat && python -m uvicorn server:app --host 0.0.0.0 --port 8001"
+echo  [OK] Launching backend...
+cd /d "%~dp0"
+start "" /min start-backend.bat
 timeout /t 5 /nobreak >nul
 
 :: ================================================================
 :: STEP 7: START FRONTEND
 :: ================================================================
 echo  [Step 7/7] Starting Frontend...
-cd /d "%~dp0frontend"
 
-if not exist "node_modules" (
-    echo      Installing frontend packages (2-3 min first time)...
-    call yarn install
-)
-
+cd /d "%~dp0"
 echo  [OK] Launching frontend...
-start "DLH-Frontend" /min cmd /k "cd /d "%~dp0frontend" && run.bat"
+start "" /min start-frontend.bat
 echo      Compiling (~30 seconds)...
 timeout /t 30 /nobreak >nul
 
