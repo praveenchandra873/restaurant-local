@@ -1,48 +1,61 @@
 $Host.UI.RawUI.WindowTitle = "DLH-Backend"
 
+# Refresh PATH first
+$env:Path = [Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [Environment]::GetEnvironmentVariable("Path","User")
+
+# Find folders
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $backendDir = Join-Path $scriptDir "backend"
-
-# GO TO BACKEND FOLDER
 Set-Location $backendDir
 
 Write-Host ""
-Write-Host "  Starting Dine Local Hub Backend..." -ForegroundColor Cyan
-Write-Host "  Folder: $backendDir" -ForegroundColor Gray
+Write-Host "  DLH Backend" -ForegroundColor Cyan
+Write-Host "  Dir: $backendDir" -ForegroundColor Gray
 Write-Host ""
 
-# Refresh PATH from system
-$machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
-$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
-$env:Path = "$machinePath;$userPath"
-
-# Create .env
-@"
-MONGO_URL=mongodb://localhost:27017
-DB_NAME=dine_local_hub
-CORS_ORIGINS=*
-"@ | Set-Content -Path ".\.env" -Encoding UTF8
+# Create .env using full path
+$envFile = Join-Path $backendDir ".env"
+"MONGO_URL=mongodb://localhost:27017`nDB_NAME=dine_local_hub`nCORS_ORIGINS=*" | Out-File -FilePath $envFile -Encoding ascii -NoNewline
+Write-Host "  [OK] .env created" -ForegroundColor Green
 
 # Create venv if needed
-if (-not (Test-Path "venv\Scripts\Activate.ps1")) {
+$venvActivate = Join-Path $backendDir "venv\Scripts\Activate.ps1"
+if (-not (Test-Path $venvActivate)) {
     Write-Host "  Creating virtual environment..." -ForegroundColor Yellow
-    cmd /c "python -m venv venv"
+    & python -m venv (Join-Path $backendDir "venv")
 }
 
-# Activate venv and install packages via cmd (reliable PATH)
-cmd /c "call venv\Scripts\activate.bat && python -c ""import uvicorn"" 2>nul || pip install -r requirements-local.txt"
+# Activate venv in PowerShell
+. $venvActivate
 
-# Seed only if database is empty
+# Install packages if needed
+try { & python -c "import uvicorn" 2>$null } catch {}
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "  Installing packages..." -ForegroundColor Yellow
+    $reqFile = Join-Path $backendDir "requirements-local.txt"
+    if (Test-Path $reqFile) {
+        & pip install -r $reqFile
+    } else {
+        & pip install fastapi uvicorn python-dotenv pymongo pydantic motor
+    }
+}
+
+# Seed if database is empty
 Write-Host "  Checking database..." -ForegroundColor Gray
-$seedCheck = cmd /c "call venv\Scripts\activate.bat && python -c ""from motor.motor_asyncio import AsyncIOMotorClient;import asyncio,os;from dotenv import load_dotenv;from pathlib import Path;load_dotenv(Path('.env'));c=AsyncIOMotorClient(os.environ['MONGO_URL']);db=c[os.environ['DB_NAME']];n=asyncio.get_event_loop().run_until_complete(db.tables.count_documents({}));print(n)"" 2>&1"
-if ($seedCheck -match "^0$") {
-    Write-Host "  Seeding database with sample data..." -ForegroundColor Yellow
-    cmd /c "call venv\Scripts\activate.bat && python seed_db.py"
+$seedScript = Join-Path $backendDir "seed_db.py"
+try {
+    $count = & python -c "from motor.motor_asyncio import AsyncIOMotorClient;import asyncio,os;from dotenv import load_dotenv;from pathlib import Path;load_dotenv(Path('.env'));c=AsyncIOMotorClient(os.environ['MONGO_URL']);db=c[os.environ['DB_NAME']];n=asyncio.get_event_loop().run_until_complete(db.tables.count_documents({}));print(n)" 2>&1
+    if ("$count".Trim() -eq "0") {
+        Write-Host "  Seeding database..." -ForegroundColor Yellow
+        & python $seedScript
+    }
+} catch {
+    Write-Host "  Seeding database..." -ForegroundColor Yellow
+    & python $seedScript
 }
 
 Write-Host ""
 Write-Host "  Starting backend on port 8001..." -ForegroundColor Green
 Write-Host ""
 
-# Run uvicorn via cmd (handles venv activation properly)
-cmd /c "call venv\Scripts\activate.bat && python -m uvicorn server:app --host 0.0.0.0 --port 8001"
+& python -m uvicorn server:app --host 0.0.0.0 --port 8001
