@@ -2,12 +2,16 @@ $Host.UI.RawUI.WindowTitle = "DLH-Backend"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $backendDir = Join-Path $scriptDir "backend"
-Set-Location $backendDir
 
 Write-Host ""
 Write-Host "  Starting Dine Local Hub Backend..." -ForegroundColor Cyan
 Write-Host "  Folder: $backendDir" -ForegroundColor Gray
 Write-Host ""
+
+# Refresh PATH from system
+$machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+$userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$env:Path = "$machinePath;$userPath"
 
 # Create .env
 @"
