@@ -32,5 +32,5 @@ $env:PORT = "3000"
 Write-Host "  Starting on port 3000..." -ForegroundColor Green
 Write-Host ""
 
-# Run craco
-& $cracoPath start
+# Run craco via cmd (PowerShell can't execute .cmd files directly)
+cmd /c "$cracoPath start"
