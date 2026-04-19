@@ -8,29 +8,33 @@ Write-Host "  Starting Dine Local Hub Frontend..." -ForegroundColor Cyan
 Write-Host "  Folder: $frontendDir" -ForegroundColor Gray
 Write-Host ""
 
-# Refresh PATH from system (picks up newly installed programs)
+# Refresh PATH from system
 $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
 $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 $env:Path = "$machinePath;$userPath"
 
+# Go to frontend folder first (PowerShell handles special chars)
+Set-Location $frontendDir
+
 # Install packages if needed
-$nodeModules = Join-Path $frontendDir "node_modules"
-if (-not (Test-Path $nodeModules)) {
+if (-not (Test-Path "node_modules")) {
     Write-Host "  Installing packages - first time, 2-3 minutes..." -ForegroundColor Yellow
-    cmd /c "cd /d `"$frontendDir`" && npm install"
+    # Run npm from current directory (no path issues)
+    cmd /c "npm install"
     Write-Host ""
 }
 
 # Check craco exists
-$cracoJs = Join-Path $frontendDir "node_modules\@craco\craco\dist\bin\craco.js"
-if (-not (Test-Path $cracoJs)) {
+if (-not (Test-Path "node_modules\@craco\craco\dist\bin\craco.js")) {
     Write-Host "  craco not found, reinstalling..." -ForegroundColor Yellow
-    cmd /c "cd /d `"$frontendDir`" && npm install"
+    cmd /c "npm install"
     Write-Host ""
 }
 
 Write-Host "  Starting on port 3000..." -ForegroundColor Green
 Write-Host ""
 
-# Run everything through cmd which has the correct PATH
-cmd /c "cd /d `"$frontendDir`" && set HOST=0.0.0.0 && set PORT=3000 && node `"$cracoJs`" start"
+# Set env vars and run craco from current directory
+$env:HOST = "0.0.0.0"
+$env:PORT = "3000"
+cmd /c "node node_modules\@craco\craco\dist\bin\craco.js start"
