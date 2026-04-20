@@ -1,9 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
-import Home from "@/pages/Home";
-import CaptainApp from "@/pages/CaptainApp";
+import MainPOS from "@/pages/MainPOS";
 import KitchenDisplay from "@/pages/KitchenDisplay";
-import BillingDashboard from "@/pages/BillingDashboard";
 import AdminPanel from "@/pages/AdminPanel";
 import OwnerPanel from "@/pages/OwnerPanel";
 
@@ -12,10 +10,8 @@ function App() {
     <div className="App">
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/captain" element={<CaptainApp />} />
+          <Route path="/" element={<MainPOS />} />
           <Route path="/kitchen" element={<KitchenDisplay />} />
-          <Route path="/billing" element={<BillingDashboard />} />
           <Route path="/admin" element={<AdminPanel />} />
           <Route path="/owner" element={<OwnerPanel />} />
         </Routes>
