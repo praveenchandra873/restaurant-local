@@ -40,14 +40,17 @@ if ($LASTEXITCODE -ne 0) {
     }
 }
 
-# Seed if database is empty
+# Seed if database is empty OR has outdated menu (less than 90 items)
 Write-Host "  Checking database..." -ForegroundColor Gray
 $seedScript = Join-Path $backendDir "seed_db.py"
 try {
-    $count = & python -c "from motor.motor_asyncio import AsyncIOMotorClient;import asyncio,os;from dotenv import load_dotenv;from pathlib import Path;load_dotenv(Path('.env'));c=AsyncIOMotorClient(os.environ['MONGO_URL']);db=c[os.environ['DB_NAME']];n=asyncio.get_event_loop().run_until_complete(db.tables.count_documents({}));print(n)" 2>&1
-    if ("$count".Trim() -eq "0") {
-        Write-Host "  Seeding database..." -ForegroundColor Yellow
+    $menuCount = & python -c "from motor.motor_asyncio import AsyncIOMotorClient;import asyncio,os;from dotenv import load_dotenv;from pathlib import Path;load_dotenv(Path('.env'));c=AsyncIOMotorClient(os.environ['MONGO_URL']);db=c[os.environ['DB_NAME']];n=asyncio.get_event_loop().run_until_complete(db.menu_items.count_documents({}));print(n)" 2>&1
+    $menuNum = [int]("$menuCount".Trim())
+    if ($menuNum -lt 90) {
+        Write-Host "  Menu has $menuNum items, re-seeding with full 90-item menu..." -ForegroundColor Yellow
         & python $seedScript
+    } else {
+        Write-Host "  [OK] Database has $menuNum menu items" -ForegroundColor Green
     }
 } catch {
     Write-Host "  Seeding database..." -ForegroundColor Yellow
