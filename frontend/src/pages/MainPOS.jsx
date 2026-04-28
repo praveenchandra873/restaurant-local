@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
-const CATEGORIES = ["All", "Main Course", "Appetizer", "Salad", "Dessert", "Beverage"];
+const CATEGORIES = ["All", "Starter", "Maggi", "Sandwich", "Pasta", "Rice", "Chinese", "Mocktail", "Cold Coffee", "Combo"];
 
 const MainPOS = () => {
   const navigate = useNavigate();
