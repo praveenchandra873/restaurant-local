@@ -155,11 +155,11 @@ const MainPOS = () => {
   };
 
   const generateBill = async () => {
-    if (!paymentMethod || !billOrder) return;
+    if (!billOrder) return;
     setLoading(true);
     try {
-      const billRes = await axios.post(`${API}/bills`, { order_id: billOrder.id, payment_method: paymentMethod });
-      await axios.put(`${API}/bills/${billRes.data.id}`, { payment_status: "paid", payment_method: paymentMethod });
+      const billRes = await axios.post(`${API}/bills`, { order_id: billOrder.id, payment_method: "Cash" });
+      await axios.put(`${API}/bills/${billRes.data.id}`, { payment_status: "paid", payment_method: "Cash" });
       toast.success("Bill generated & paid!");
       setShowBillDialog(false);
       setBillOrder(null);
@@ -480,17 +480,7 @@ const MainPOS = () => {
                   </div>
                 </div>
               </div>
-              <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                <SelectTrigger data-testid="pay-method" className="bg-[#F2EFE9] border-[#E0DBD3]">
-                  <SelectValue placeholder="Payment method" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cash">Cash</SelectItem>
-                  <SelectItem value="Card">Card</SelectItem>
-                  <SelectItem value="UPI">UPI</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button onClick={generateBill} disabled={loading || !paymentMethod} data-testid="confirm-bill-btn"
+              <Button onClick={generateBill} disabled={loading} data-testid="confirm-bill-btn"
                 className="w-full min-h-[48px] bg-[#C25934] hover:bg-[#A84C2B] text-white rounded-md font-semibold">
                 {loading ? "Processing..." : "Generate Bill & Mark Paid"}
               </Button>
