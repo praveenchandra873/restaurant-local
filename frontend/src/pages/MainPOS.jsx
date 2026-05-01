@@ -116,38 +116,33 @@ const MainPOS = () => {
   };
 
   const printReceipt = (order) => {
-    const subtotal = order.total_amount;
-    const tax = subtotal * 0.18;
-    const total = subtotal + tax;
+    const total = order.total_amount;
     const now = new Date().toLocaleString();
 
     const receiptHtml = `
       <html><head><title>Receipt - Table ${order.table_number}</title>
       <style>
-        body { font-family: monospace; width: 300px; margin: 0 auto; padding: 20px; }
-        h2 { text-align: center; margin: 0 0 5px; }
-        p.center { text-align: center; margin: 4px 0; font-size: 12px; }
-        hr { border: 1px dashed #000; margin: 10px 0; }
-        .item { display: flex; justify-content: space-between; font-size: 13px; margin: 4px 0; }
-        .total { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin: 6px 0; }
-        .footer { text-align: center; font-size: 11px; margin-top: 15px; }
+        body { font-family: monospace; width: 250px; margin: 0 auto; padding: 10px; font-size: 16px; }
+        h2 { text-align: center; margin: 0 0 5px; font-size: 22px; }
+        p.center { text-align: center; margin: 4px 0; font-size: 14px; }
+        hr { border: 1px dashed #000; margin: 8px 0; }
+        .item { display: flex; justify-content: space-between; font-size: 16px; margin: 5px 0; }
+        .total { display: flex; justify-content: space-between; font-weight: bold; font-size: 20px; margin: 6px 0; }
+        .footer { text-align: center; font-size: 14px; margin-top: 12px; }
       </style></head><body>
-      <h2>Nanhe Cafe</h2>
+      <h2>Dubeyji's</h2>
       <p class="center">Table: ${order.table_number}</p>
       <p class="center">${now}</p>
       <hr/>
-      ${order.items.map(i => `<div class="item"><span>${i.quantity}x ${i.name}</span><span>₹${(i.price * i.quantity).toFixed(2)}</span></div>`).join('')}
+      ${order.items.map(i => `<div class="item"><span>${i.quantity}x ${i.name}</span><span>₹${(i.price * i.quantity).toFixed(0)}</span></div>`).join('')}
       <hr/>
-      <div class="item"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
-      <div class="item"><span>Tax (18%)</span><span>₹${tax.toFixed(2)}</span></div>
-      <hr/>
-      <div class="total"><span>TOTAL</span><span>₹${total.toFixed(2)}</span></div>
+      <div class="total"><span>TOTAL</span><span>₹${total.toFixed(0)}</span></div>
       <hr/>
       <div class="footer">Thank you! Visit again.</div>
       </body></html>
     `;
 
-    const printWindow = window.open('', '_blank', 'width=350,height=600');
+    const printWindow = window.open('', '_blank', 'width=300,height=500');
     printWindow.document.write(receiptHtml);
     printWindow.document.close();
     printWindow.focus();
