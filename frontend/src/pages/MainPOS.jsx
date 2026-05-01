@@ -143,17 +143,26 @@ const MainPOS = () => {
       </body></html>
     `;
 
-    const printWindow = window.open('', '_blank', 'width=300,height=500');
-    printWindow.document.write(kotHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    silentPrint(kotHtml);
   };
 
   const handlePrintBill = (order) => {
     setBillOrder(order);
     setPaymentMethod("");
     setShowBillDialog(true);
+  };
+
+  const silentPrint = (html) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'absolute';
+    iframe.style.top = '-10000px';
+    iframe.style.left = '-10000px';
+    document.body.appendChild(iframe);
+    iframe.contentDocument.write(html);
+    iframe.contentDocument.close();
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+    setTimeout(() => document.body.removeChild(iframe), 3000);
   };
 
   const printReceipt = (order) => {
@@ -183,11 +192,7 @@ const MainPOS = () => {
       </body></html>
     `;
 
-    const printWindow = window.open('', '_blank', 'width=300,height=500');
-    printWindow.document.write(receiptHtml);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    silentPrint(receiptHtml);
   };
 
   const generateBill = async () => {
@@ -247,123 +252,9 @@ const MainPOS = () => {
       </div>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* ===== LEFT: TABLE GRID ===== */}
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-[#2A2F2B]" data-testid="table-view-title">Table View</h2>
-            <div className="flex items-center gap-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm bg-[#E8E5E0]"></div>
-                <span className="text-[#5A615C]">Available</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm bg-[#FDE68A]"></div>
-                <span className="text-[#5A615C]">Occupied</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <div className="w-3 h-3 rounded-sm bg-[#BBF7D0]"></div>
-                <span className="text-[#5A615C]">Ready</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3" data-testid="table-grid">
-            {tables.map(table => {
-              const order = getTableOrder(table.id);
-              const isSelected = selectedTable?.id === table.id;
-              const isReady = order?.status === "ready";
-
-              let bgColor = "bg-[#E8E5E0]";
-              let borderColor = "border-transparent";
-              if (order && isReady) { bgColor = "bg-[#BBF7D0]"; }
-              else if (order) { bgColor = "bg-[#FDE68A]"; }
-              if (isSelected) { borderColor = "border-[#C25934]"; }
-
-              return (
-                <div
-                  key={table.id}
-                  data-testid={`table-${table.table_number}`}
-                  onClick={() => handleTableClick(table)}
-                  className={`${bgColor} border-2 ${borderColor} rounded-xl p-3 cursor-pointer hover:shadow-md transition-all min-h-[100px] flex flex-col justify-between`}
-                >
-                  <div className="text-center">
-                    <div className="text-lg font-bold text-[#2A2F2B]">{table.table_number}</div>
-                  </div>
-
-                  {order ? (
-                    <div className="text-center mt-1">
-                      <div className="text-xs font-semibold text-[#5A615C]">{getOrderTime(order.created_at)} Min</div>
-                      <div className="text-sm font-bold text-[#2A2F2B]">₹{order.total_amount.toFixed(0)}</div>
-                      <div className="flex justify-center gap-1 mt-1">
-                        <button onClick={(e) => { e.stopPropagation(); printReceipt(order); }}
-                          data-testid={`print-bill-${table.table_number}`}
-                          className="p-1 bg-white/70 rounded hover:bg-white transition-colors" title="Print Receipt">
-                          <Printer className="w-3.5 h-3.5 text-[#5A615C]" />
-                        </button>
-                        <button onClick={(e) => { e.stopPropagation(); handleTableClick(table); }}
-                          data-testid={`view-order-${table.table_number}`}
-                          className="p-1 bg-white/70 rounded hover:bg-white transition-colors" title="View Order">
-                          <Eye className="w-3.5 h-3.5 text-[#5A615C]" />
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center mt-1">
-                      <div className="text-xs text-[#999] font-medium">Cap: {table.capacity}</div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* ===== KITCHEN ORDERS (inline) ===== */}
-          <div className="mt-8">
-            <h2 className="text-lg font-semibold text-[#2A2F2B] mb-4" data-testid="kitchen-section-title">Kitchen Orders</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {orders.filter(o => ["pending", "preparing"].includes(o.status)).map(order => (
-                <div key={order.id} data-testid={`kitchen-order-${order.id}`}
-                  className={`rounded-xl p-4 border ${order.status === "pending" ? "bg-[#FDF4E6] border-[#D99C3D]" : "bg-[#E9F0EC] border-[#4A6B56]"}`}>
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <span className="text-xs uppercase tracking-[0.15em] font-semibold text-[#5A615C]">Table</span>
-                      <div className="text-xl font-bold text-[#2A2F2B]">{order.table_number}</div>
-                    </div>
-                    <span className={`text-xs font-semibold px-2 py-1 rounded ${order.status === "pending" ? "bg-[#D99C3D] text-white" : "bg-[#4A6B56] text-white"}`}>
-                      {order.status}
-                    </span>
-                  </div>
-                  <div className="space-y-1 mb-3">
-                    {order.items.map((item, idx) => (
-                      <div key={idx} className="text-sm text-[#2A2F2B]">{item.quantity}x {item.name}</div>
-                    ))}
-                  </div>
-                  {order.status === "pending" && (
-                    <Button onClick={() => updateOrderStatus(order.id, "preparing")} data-testid={`start-prep-${order.id}`}
-                      className="w-full bg-[#D99C3D] hover:bg-[#c88a2e] text-white text-sm py-1">
-                      Start Preparing
-                    </Button>
-                  )}
-                  {order.status === "preparing" && (
-                    <Button onClick={() => updateOrderStatus(order.id, "ready")} data-testid={`mark-ready-${order.id}`}
-                      className="w-full bg-[#4A6B56] hover:bg-[#3d5647] text-white text-sm py-1">
-                      Mark Ready
-                    </Button>
-                  )}
-                </div>
-              ))}
-              {orders.filter(o => ["pending", "preparing"].includes(o.status)).length === 0 && (
-                <div className="col-span-full text-center py-8 text-[#5A615C]" data-testid="no-kitchen-orders">
-                  No active kitchen orders
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* ===== RIGHT: ORDER PANEL ===== */}
+        {/* ===== LEFT: ORDER PANEL ===== */}
         {selectedTable && (
-          <div className="w-[420px] bg-white border-l border-[#E0DBD3] flex flex-col shadow-[-4px_0_12px_rgba(42,47,43,0.04)]" data-testid="order-panel">
+          <div className="w-[420px] bg-white border-r border-[#E0DBD3] flex flex-col shadow-[4px_0_12px_rgba(42,47,43,0.04)]" data-testid="order-panel">
             {/* Panel Header */}
             <div className="p-4 border-b border-[#E0DBD3] flex items-center justify-between">
               <div>
@@ -479,6 +370,120 @@ const MainPOS = () => {
             )}
           </div>
         )}
+
+        {/* ===== RIGHT: TABLE GRID ===== */}
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-[#2A2F2B]" data-testid="table-view-title">Table View</h2>
+            <div className="flex items-center gap-4 text-xs">
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-[#E8E5E0]"></div>
+                <span className="text-[#5A615C]">Available</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-[#FDE68A]"></div>
+                <span className="text-[#5A615C]">Occupied</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-3 h-3 rounded-sm bg-[#BBF7D0]"></div>
+                <span className="text-[#5A615C]">Ready</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-3" data-testid="table-grid">
+            {tables.map(table => {
+              const order = getTableOrder(table.id);
+              const isSelected = selectedTable?.id === table.id;
+              const isReady = order?.status === "ready";
+
+              let bgColor = "bg-[#E8E5E0]";
+              let borderColor = "border-transparent";
+              if (order && isReady) { bgColor = "bg-[#BBF7D0]"; }
+              else if (order) { bgColor = "bg-[#FDE68A]"; }
+              if (isSelected) { borderColor = "border-[#C25934]"; }
+
+              return (
+                <div
+                  key={table.id}
+                  data-testid={`table-${table.table_number}`}
+                  onClick={() => handleTableClick(table)}
+                  className={`${bgColor} border-2 ${borderColor} rounded-xl p-3 cursor-pointer hover:shadow-md transition-all min-h-[100px] flex flex-col justify-between`}
+                >
+                  <div className="text-center">
+                    <div className="text-lg font-bold text-[#2A2F2B]">{table.table_number}</div>
+                  </div>
+
+                  {order ? (
+                    <div className="text-center mt-1">
+                      <div className="text-xs font-semibold text-[#5A615C]">{getOrderTime(order.created_at)} Min</div>
+                      <div className="text-sm font-bold text-[#2A2F2B]">₹{order.total_amount.toFixed(0)}</div>
+                      <div className="flex justify-center gap-1 mt-1">
+                        <button onClick={(e) => { e.stopPropagation(); printReceipt(order); }}
+                          data-testid={`print-bill-${table.table_number}`}
+                          className="p-1 bg-white/70 rounded hover:bg-white transition-colors" title="Print Receipt">
+                          <Printer className="w-3.5 h-3.5 text-[#5A615C]" />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); handleTableClick(table); }}
+                          data-testid={`view-order-${table.table_number}`}
+                          className="p-1 bg-white/70 rounded hover:bg-white transition-colors" title="View Order">
+                          <Eye className="w-3.5 h-3.5 text-[#5A615C]" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center mt-1">
+                      <div className="text-xs text-[#999] font-medium">Cap: {table.capacity}</div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* ===== KITCHEN ORDERS (inline) ===== */}
+          <div className="mt-8">
+            <h2 className="text-lg font-semibold text-[#2A2F2B] mb-4" data-testid="kitchen-section-title">Kitchen Orders</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {orders.filter(o => ["pending", "preparing"].includes(o.status)).map(order => (
+                <div key={order.id} data-testid={`kitchen-order-${order.id}`}
+                  className={`rounded-xl p-4 border ${order.status === "pending" ? "bg-[#FDF4E6] border-[#D99C3D]" : "bg-[#E9F0EC] border-[#4A6B56]"}`}>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <span className="text-xs uppercase tracking-[0.15em] font-semibold text-[#5A615C]">Table</span>
+                      <div className="text-xl font-bold text-[#2A2F2B]">{order.table_number}</div>
+                    </div>
+                    <span className={`text-xs font-semibold px-2 py-1 rounded ${order.status === "pending" ? "bg-[#D99C3D] text-white" : "bg-[#4A6B56] text-white"}`}>
+                      {order.status}
+                    </span>
+                  </div>
+                  <div className="space-y-1 mb-3">
+                    {order.items.map((item, idx) => (
+                      <div key={idx} className="text-sm text-[#2A2F2B]">{item.quantity}x {item.name}</div>
+                    ))}
+                  </div>
+                  {order.status === "pending" && (
+                    <Button onClick={() => updateOrderStatus(order.id, "preparing")} data-testid={`start-prep-${order.id}`}
+                      className="w-full bg-[#D99C3D] hover:bg-[#c88a2e] text-white text-sm py-1">
+                      Start Preparing
+                    </Button>
+                  )}
+                  {order.status === "preparing" && (
+                    <Button onClick={() => updateOrderStatus(order.id, "ready")} data-testid={`mark-ready-${order.id}`}
+                      className="w-full bg-[#4A6B56] hover:bg-[#3d5647] text-white text-sm py-1">
+                      Mark Ready
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {orders.filter(o => ["pending", "preparing"].includes(o.status)).length === 0 && (
+                <div className="col-span-full text-center py-8 text-[#5A615C]" data-testid="no-kitchen-orders">
+                  No active kitchen orders
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* ===== BILL DIALOG ===== */}
