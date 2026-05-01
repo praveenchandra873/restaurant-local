@@ -95,18 +95,59 @@ const MainPOS = () => {
     if (!selectedTable || cart.length === 0) return;
     setLoading(true);
     try {
-      await axios.post(`${API}/orders`, {
+      const res = await axios.post(`${API}/orders`, {
         table_id: selectedTable.id,
         table_number: selectedTable.table_number,
         items: cart.map(c => ({ menu_item_id: c.id, name: c.name, quantity: c.quantity, price: c.price })),
         notes: ""
       });
       toast.success("Order placed!");
+      printKOT(selectedTable.table_number, cart);
       fetchData();
       setSelectedTable(null);
       setCart([]);
     } catch (err) { toast.error("Failed to place order"); }
     finally { setLoading(false); }
+  };
+
+  const printKOT = (tableNumber, items) => {
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: '2-digit' });
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const kotNum = Math.floor(Math.random() * 900) + 100;
+
+    const kotHtml = `
+      <html><head><title>KOT - Table ${tableNumber}</title>
+      <style>
+        body { font-family: monospace; width: 250px; margin: 0 auto; padding: 10px; font-size: 16px; }
+        h2 { text-align: center; margin: 0 0 3px; font-size: 24px; font-weight: bold; }
+        p.center { text-align: center; margin: 3px 0; font-size: 16px; }
+        hr { border: 1px dashed #000; margin: 8px 0; }
+        table { width: 100%; border-collapse: collapse; font-size: 16px; }
+        th { text-align: left; padding: 4px 0; font-size: 14px; border-bottom: 1px solid #000; }
+        th:last-child { text-align: right; }
+        td { padding: 5px 0; font-size: 16px; font-weight: bold; }
+        td:last-child { text-align: right; }
+      </style></head><body>
+      <h2>KOT</h2>
+      <p class="center">${dateStr} ${timeStr}</p>
+      <p class="center">KOT - ${kotNum}</p>
+      <p class="center" style="font-weight:bold;">Dine In</p>
+      <p class="center" style="font-size:20px; font-weight:bold;">Table No: ${tableNumber}</p>
+      <hr/>
+      <table>
+        <tr><th>Item</th><th>Qty.</th></tr>
+        ${items.map(i => `<tr><td>${i.name}</td><td>${i.quantity}</td></tr>`).join('')}
+      </table>
+      <hr/>
+      </body></html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=300,height=500');
+    printWindow.document.write(kotHtml);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
   };
 
   const handlePrintBill = (order) => {
