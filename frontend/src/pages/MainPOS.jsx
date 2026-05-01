@@ -115,6 +115,45 @@ const MainPOS = () => {
     setShowBillDialog(true);
   };
 
+  const printReceipt = (order) => {
+    const subtotal = order.total_amount;
+    const tax = subtotal * 0.18;
+    const total = subtotal + tax;
+    const now = new Date().toLocaleString();
+
+    const receiptHtml = `
+      <html><head><title>Receipt - Table ${order.table_number}</title>
+      <style>
+        body { font-family: monospace; width: 300px; margin: 0 auto; padding: 20px; }
+        h2 { text-align: center; margin: 0 0 5px; }
+        p.center { text-align: center; margin: 4px 0; font-size: 12px; }
+        hr { border: 1px dashed #000; margin: 10px 0; }
+        .item { display: flex; justify-content: space-between; font-size: 13px; margin: 4px 0; }
+        .total { display: flex; justify-content: space-between; font-weight: bold; font-size: 15px; margin: 6px 0; }
+        .footer { text-align: center; font-size: 11px; margin-top: 15px; }
+      </style></head><body>
+      <h2>Nanhe Cafe</h2>
+      <p class="center">Table: ${order.table_number}</p>
+      <p class="center">${now}</p>
+      <hr/>
+      ${order.items.map(i => `<div class="item"><span>${i.quantity}x ${i.name}</span><span>₹${(i.price * i.quantity).toFixed(2)}</span></div>`).join('')}
+      <hr/>
+      <div class="item"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
+      <div class="item"><span>Tax (18%)</span><span>₹${tax.toFixed(2)}</span></div>
+      <hr/>
+      <div class="total"><span>TOTAL</span><span>₹${total.toFixed(2)}</span></div>
+      <hr/>
+      <div class="footer">Thank you! Visit again.</div>
+      </body></html>
+    `;
+
+    const printWindow = window.open('', '_blank', 'width=350,height=600');
+    printWindow.document.write(receiptHtml);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
   const generateBill = async () => {
     if (!paymentMethod || !billOrder) return;
     setLoading(true);
@@ -220,14 +259,14 @@ const MainPOS = () => {
                       <div className="text-xs font-semibold text-[#5A615C]">{getOrderTime(order.created_at)} Min</div>
                       <div className="text-sm font-bold text-[#2A2F2B]">₹{order.total_amount.toFixed(0)}</div>
                       <div className="flex justify-center gap-1 mt-1">
-                        <button onClick={(e) => { e.stopPropagation(); handlePrintBill(order); }}
+                        <button onClick={(e) => { e.stopPropagation(); printReceipt(order); }}
                           data-testid={`print-bill-${table.table_number}`}
-                          className="p-1 bg-white/70 rounded hover:bg-white transition-colors">
+                          className="p-1 bg-white/70 rounded hover:bg-white transition-colors" title="Print Receipt">
                           <Printer className="w-3.5 h-3.5 text-[#5A615C]" />
                         </button>
                         <button onClick={(e) => { e.stopPropagation(); handleTableClick(table); }}
                           data-testid={`view-order-${table.table_number}`}
-                          className="p-1 bg-white/70 rounded hover:bg-white transition-colors">
+                          className="p-1 bg-white/70 rounded hover:bg-white transition-colors" title="View Order">
                           <Eye className="w-3.5 h-3.5 text-[#5A615C]" />
                         </button>
                       </div>
@@ -381,13 +420,25 @@ const MainPOS = () => {
               </div>
             </div>
 
-            {/* Place Order Button */}
+            {/* Place Order / Bill Buttons */}
             {cart.length > 0 && (
-              <div className="p-3 border-t border-[#E0DBD3]">
+              <div className="p-3 border-t border-[#E0DBD3] space-y-2">
                 <Button onClick={placeOrder} disabled={loading} data-testid="place-order-btn"
                   className="w-full min-h-[48px] bg-[#C25934] hover:bg-[#A84C2B] text-white rounded-md font-semibold text-base">
                   {loading ? "Placing..." : `Place Order - ₹${cartTotal.toFixed(2)}`}
                 </Button>
+                {getTableOrder(selectedTable.id) && (
+                  <div className="flex gap-2">
+                    <Button onClick={() => printReceipt(getTableOrder(selectedTable.id))} data-testid="panel-print-btn"
+                      className="flex-1 min-h-[40px] bg-[#2A2F2B] hover:bg-[#3a3f3b] text-white rounded-md font-semibold text-sm">
+                      <Printer className="w-4 h-4 mr-1" /> Print
+                    </Button>
+                    <Button onClick={() => handlePrintBill(getTableOrder(selectedTable.id))} data-testid="panel-bill-btn"
+                      className="flex-1 min-h-[40px] bg-[#4A6B56] hover:bg-[#3d5647] text-white rounded-md font-semibold text-sm">
+                      Bill & Pay
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -442,6 +493,10 @@ const MainPOS = () => {
               <Button onClick={generateBill} disabled={loading || !paymentMethod} data-testid="confirm-bill-btn"
                 className="w-full min-h-[48px] bg-[#C25934] hover:bg-[#A84C2B] text-white rounded-md font-semibold">
                 {loading ? "Processing..." : "Generate Bill & Mark Paid"}
+              </Button>
+              <Button onClick={() => printReceipt(billOrder)} data-testid="print-receipt-btn"
+                className="w-full min-h-[48px] bg-[#2A2F2B] hover:bg-[#3a3f3b] text-white rounded-md font-semibold">
+                <Printer className="w-4 h-4 mr-2" /> Print Receipt
               </Button>
             </div>
           )}
